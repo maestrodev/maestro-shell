@@ -74,7 +74,7 @@ module Maestro
       #                   do not assume it always represents a single line.
       #   +err+   Boolean True if line is from stderr
       def run_script_with_delegate(delegate, on_output)
-        File.open(@output_file.path, "a") do |out_file|
+        File.open(@output_file.path, 'a') do |out_file|
           status = IO.popen4(@command_line) do |pid, stdin, stdout, stderr|
             threads = []
             # Read stdout/stderr and push to output
