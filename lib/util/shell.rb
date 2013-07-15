@@ -76,22 +76,26 @@ module Maestro
       def run_script_with_delegate(delegate, on_output)
         File.open(@output_file.path, 'a') do |out_file|
           status = IO.popen4(@command_line) do |pid, stdin, stdout, stderr|
-            threads = []
-            # Read stdout/stderr and push to output
-            [ stdout, stderr ].each do |stream|
-              threads << Thread.new do
-                while !stream.eof? && text = stream.readpartial(1024)
+            # Keep reading input until all (stdin/stderr) streams report eof
+            readers = [stdout, stderr]
+            while readers.any?
+              ready = IO.select(readers, [], readers)
+              # no writers
+              # ready[1].each { ... }
+              ready[0].each do |fd|
+                if fd.eof?
+                  readers.delete fd
+                 else
+
+                  text = fd.readpartial(1024)
                   out_file.write(text)
 
                   if delegate && on_output
-                    delegate.send(on_output, text, stream == stderr)
+                    delegate.send(on_output, text, fd == stderr)
                   end
                 end
               end
             end
-
-            # Wait for stream handler threads to exit
-            threads.each { |t| t.join }
           end
         end
 
