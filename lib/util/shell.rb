@@ -32,7 +32,7 @@ module Maestro
       COMMAND_SEPARATOR  = '&&' # IS_WINDOWS ? '&&' : '&&'
       SCRIPT_EXTENSION   = IS_WINDOWS ? '.bat' : '.shell'
       SHELL_EXECUTABLE   = IS_WINDOWS ? '' : 'bash '
-      COMMAND_SUFFIX     = IS_WINDOWS ? '' : ' 2>&1 | tee'
+      COMMAND_SUFFIX     = IS_WINDOWS ? '' : ' 2>&1'
 
       def Shell.unset_env_variable(var)
         IS_WINDOWS ? "set #{var}=" : "unset #{var}"
@@ -86,7 +86,7 @@ module Maestro
               ready[0].each do |fd|
                 if fd.eof?
                   readers.delete fd
-                 else
+                else
 
                   text = fd.readpartial(1024)
                   out_file.write(text)
