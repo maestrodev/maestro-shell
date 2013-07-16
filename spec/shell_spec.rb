@@ -68,7 +68,7 @@ describe Maestro::Util::Shell do
    it 'should run with with export inline' do
      command =<<-CMD
 #{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BLAH=blah; echo $BLAH
-     CMD
+CMD
      
      path = subject.create_script command
      
@@ -80,8 +80,8 @@ describe Maestro::Util::Shell do
    it 'should run multiline command' do
      command =<<-CMD
 echo hello\r\n
-echo goodbye     
-     CMD
+echo goodbye
+CMD
      
      path = subject.create_script command
      

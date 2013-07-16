@@ -32,6 +32,7 @@ module Maestro
       COMMAND_SEPARATOR  = '&&' # IS_WINDOWS ? '&&' : '&&'
       SCRIPT_EXTENSION   = IS_WINDOWS ? '.bat' : '.shell'
       SHELL_EXECUTABLE   = IS_WINDOWS ? '' : 'bash '
+      COMMAND_SUFFIX     = IS_WINDOWS ? '' : ' 2>&1 | tee'
 
       def Shell.unset_env_variable(var)
         IS_WINDOWS ? "set #{var}=" : "unset #{var}"
@@ -91,7 +92,7 @@ module Maestro
                   out_file.write(text)
 
                   if delegate && on_output
-                    delegate.send(on_output, text, fd == stderr)
+                    delegate.send(on_output, text)
                   end
                 end
               end
@@ -116,7 +117,7 @@ module Maestro
       private
       
       def get_command(path)
-        @command_line = "#{SHELL_EXECUTABLE}#{path}"
+        @command_line = "#{SHELL_EXECUTABLE}#{path}#{COMMAND_SUFFIX}"
         @command_line
       end
 
