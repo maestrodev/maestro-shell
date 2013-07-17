@@ -36,7 +36,6 @@ describe Maestro::Util::Shell do
     # File.exists?(path).should be_true
     
     subject.run_script.success?.should be_true
-    
     subject.to_s.chomp.should eql('willy')
   end
   
@@ -93,7 +92,7 @@ CMD
      
      subject.run_script.success?.should be_true
      # Strips \r
-     subject.to_s.should eql("hello\ngoodbye\n")
+     subject.to_s.should eql("hello\r\ngoodbye\n")
    end
 
    it 'should create run and return result in on call' do
@@ -109,7 +108,7 @@ CMD
      File.chmod(0777, temp.path)
      command =<<-CMD
 #{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BLAH=blah; echo $BLAH
-#{Maestro::Util::Shell::SHELL_EXECUTABLE} #{temp.path}
+#{temp.path}
      CMD
 
      path = subject.create_script command

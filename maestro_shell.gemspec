@@ -21,6 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'logging', '1.8.0'
   spec.add_dependency 'rubyzip', '0.9.8'
   spec.add_dependency 'json', '>= 1.4.6'
+  spec.add_dependency 'childprocess', '>= 0.3.9'
 
   spec.add_development_dependency "mocha", '>=0.10.0'
   spec.add_development_dependency 'bundler', '~> 1.3'

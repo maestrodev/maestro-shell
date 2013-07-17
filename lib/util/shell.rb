@@ -1,6 +1,6 @@
 # Copyright 2011 (c) MaestroDev.  All rights reserved.
 
-require 'pty'
+require 'childprocess'
 require 'tempfile'
 require 'rbconfig'
 
@@ -17,7 +17,7 @@ module Maestro
         attr_reader :exit_code
 
         def initialize(status)
-          @exit_code = status.exitstatus
+          @exit_code = status
         end
 
         def success?
@@ -32,7 +32,7 @@ module Maestro
       ENV_EXPORT_COMMAND = IS_WINDOWS ? 'set' : 'export'
       COMMAND_SEPARATOR  = '&&' # IS_WINDOWS ? '&&' : '&&'
       SCRIPT_EXTENSION   = IS_WINDOWS ? '.bat' : '.shell'
-      SHELL_EXECUTABLE   = IS_WINDOWS ? '' : 'bash '
+      BASH_EXECUTABLE    = 'bash'
 
       def Shell.unset_env_variable(var)
         IS_WINDOWS ? "set #{var}=" : "unset #{var}"
@@ -76,25 +76,25 @@ module Maestro
       #   +err+   Boolean True if line is from stderr
       def run_script_with_delegate(delegate, on_output)
         File.open(@output_file.path, 'a') do |out_file|
-          sleep 0.1
-          status = PTY.spawn(@command_line) do |master, slave, pid|
-            begin
-              while !slave.eof?
-                text = slave.readpartial(1024).gsub(/\r/, '')
-                out_file.write(text)
+          r, w = IO.pipe
+          ChildProcess.posix_spawn = true
+          process = IS_WINDOWS ? ChildProcess.build(@command_line) : ChildProcess.build(BASH_EXECUTABLE, @command_line)
+          process.io.stdout = process.io.stderr = w
+          process.start
+          w.close
 
-                if delegate && on_output
-                  delegate.send(on_output, text)
-                end
-              end
-            rescue Exception => e
-              Maestro.log.warn "Got Exception in spawn #{e} #{e.class}"
+          while !r.eof? do
+            text = r.readpartial(1024)
+            out_file.write(text)
+
+            if delegate && on_output
+              delegate.send(on_output, text)
             end
-
-            Process.wait(pid)
           end
 
-          @exit_code = ExitCode.new($?)
+          r.close
+          process.wait
+          @exit_code = ExitCode.new(process.exit_code)
         end
 
         return @exit_code
@@ -112,7 +112,7 @@ module Maestro
       private
       
       def get_command(path)
-        @command_line = "#{SHELL_EXECUTABLE}#{path}"
+        @command_line = path
         @command_line
       end
 
