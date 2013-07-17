@@ -78,13 +78,17 @@ module Maestro
         File.open(@output_file.path, 'a') do |out_file|
           sleep 0.1
           status = PTY.spawn(@command_line) do |master, slave, pid|
-            while !slave.eof?
-              text = slave.readpartial(1024).gsub(/\r/, '')
-              out_file.write(text)
+            begin
+              while !slave.eof?
+                text = slave.readpartial(1024).gsub(/\r/, '')
+                out_file.write(text)
 
-              if delegate && on_output
-                delegate.send(on_output, text)
+                if delegate && on_output
+                  delegate.send(on_output, text)
+                end
               end
+            rescue Exception => e
+              Maestro.log.warn "Got Exception in spawn #{e} #{e.class}"
             end
 
             Process.wait(pid)
