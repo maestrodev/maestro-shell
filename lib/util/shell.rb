@@ -76,7 +76,7 @@ module Maestro
       #   +err+   Boolean True if line is from stderr
       def run_script_with_delegate(delegate, on_output)
         File.open(@output_file.path, 'a') do |out_file|
-        sleep 1
+          sleep 0.1
           status = PTY.spawn(@command_line) do |master, slave, pid|
             while !slave.eof?
               text = slave.readpartial(1024).gsub(/\r/, '')
