@@ -1,5 +1,6 @@
 # Copyright 2011 (c) MaestroDev.  All rights reserved.
 
+require 'pty'
 require 'tempfile'
 require 'rbconfig'
 
@@ -32,7 +33,6 @@ module Maestro
       COMMAND_SEPARATOR  = '&&' # IS_WINDOWS ? '&&' : '&&'
       SCRIPT_EXTENSION   = IS_WINDOWS ? '.bat' : '.shell'
       SHELL_EXECUTABLE   = IS_WINDOWS ? '' : 'bash '
-      COMMAND_SUFFIX     = IS_WINDOWS ? '' : ' 2>&1'
 
       def Shell.unset_env_variable(var)
         IS_WINDOWS ? "set #{var}=" : "unset #{var}"
@@ -76,31 +76,22 @@ module Maestro
       #   +err+   Boolean True if line is from stderr
       def run_script_with_delegate(delegate, on_output)
         File.open(@output_file.path, 'a') do |out_file|
-          status = IO.popen4(@command_line) do |pid, stdin, stdout, stderr|
-            # Keep reading input until all (stdin/stderr) streams report eof
-            readers = [stdout, stderr]
-            while readers.any?
-              ready = IO.select(readers, [], readers)
-              # no writers
-              # ready[1].each { ... }
-              ready[0].each do |fd|
-                if fd.eof?
-                  readers.delete fd
-                else
+        sleep 1
+          status = PTY.spawn(@command_line) do |master, slave, pid|
+            while !slave.eof?
+              text = slave.readpartial(1024).gsub(/\r/, '')
+              out_file.write(text)
 
-                  text = fd.readpartial(1024)
-                  out_file.write(text)
-
-                  if delegate && on_output
-                    delegate.send(on_output, text)
-                  end
-                end
+              if delegate && on_output
+                delegate.send(on_output, text)
               end
             end
-          end
-        end
 
-        @exit_code = ExitCode.new($?)
+            Process.wait(pid)
+          end
+
+          @exit_code = ExitCode.new($?)
+        end
 
         return @exit_code
       end
@@ -117,7 +108,7 @@ module Maestro
       private
       
       def get_command(path)
-        @command_line = "#{SHELL_EXECUTABLE}#{path}#{COMMAND_SUFFIX}"
+        @command_line = "#{SHELL_EXECUTABLE}#{path}"
         @command_line
       end
 

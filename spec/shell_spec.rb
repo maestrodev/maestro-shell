@@ -62,7 +62,13 @@ describe Maestro::Util::Shell do
      path = subject.create_script "blah hello"
      
      subject.run_script.success?.should be_false
-     subject.to_s.should include("blah: command not found")
+     subject.output.should include("blah: command not found")
+   end
+
+   it 'should emit stdout and stderr in order' do
+     subject.create_script("echo stdout1\nsleep 1\necho stderr1 >&2\nsleep 1\necho stdout2\nsleep 1\necho stderr2 >&2\nsleep 1\necho stdout3")
+     subject.run_script.success?.should be_true
+     subject.to_s.should eql("stdout1\nstderr1\nstdout2\nstderr2\nstdout3\n")
    end
 
    it 'should run with with export inline' do
@@ -86,7 +92,8 @@ CMD
      path = subject.create_script command
      
      subject.run_script.success?.should be_true
-     subject.to_s.should eql("hello\r\ngoodbye\n")
+     # Strips \r
+     subject.to_s.should eql("hello\ngoodbye\n")
    end
 
    it 'should create run and return result in on call' do
@@ -102,7 +109,7 @@ CMD
      File.chmod(0777, temp.path)
      command =<<-CMD
 #{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BLAH=blah; echo $BLAH
-#{temp.path}
+#{Maestro::Util::Shell::SHELL_EXECUTABLE} #{temp.path}
      CMD
 
      path = subject.create_script command
