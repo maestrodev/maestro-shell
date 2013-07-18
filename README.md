@@ -1,5 +1,6 @@
 Maestro Shell Utility Gem
 =========================
+[![Gem Version](https://badge.fury.io/rb/maestro_shell.png)](http://badge.fury.io/rb/maestro_shell)
 
 Library For Executing Shell commands on Linux and Windows
 =========================================================
