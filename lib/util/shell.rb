@@ -83,17 +83,36 @@ module Maestro
           process.start
           w.close
 
-          while !r.eof? do
-            text = r.readpartial(1024)
-            out_file.write(text)
+          potential_eof = false
+          begin
+            loop {
+              text = r.read_nonblock(1024)
+              potential_eof = false
+              out_file.write(text)
 
-            if delegate && on_output
-              delegate.send(on_output, text)
+              if delegate && on_output
+                delegate.send(on_output, text)
+              end
+            }
+          rescue IO::WaitReadable => e
+            if !process.exited?
+              # process still running, block for input here to avoid a busy
+              # loop, but with a timeout in case the process exited with no
+              # further output
+              IO.select([r], nil, nil, 1)
+              retry
+            elsif !potential_eof
+              # process is done, but keep looping while there is input to
+              # read
+              potential_eof = true
+              retry
             end
+          rescue EOFError
+            # expected when we reach end of output from the process
           end
 
           r.close
-          process.wait
+          process.wait unless process.exited?
           @exit_code = ExitCode.new(process.exit_code)
         end
 
