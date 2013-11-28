@@ -18,14 +18,10 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'logging', '1.8.0'
-  spec.add_dependency 'rubyzip', '0.9.8'
-  spec.add_dependency 'json', '>= 1.4.6'
   spec.add_dependency 'childprocess', '>= 0.3.9'
 
   spec.add_development_dependency "mocha", '>=0.10.0'
   spec.add_development_dependency 'rake'
-#  spec.add_development_dependency 'jruby-openssl'
   spec.add_development_dependency 'rspec', '>= 2.13.0'
-  spec.add_development_dependency 'maestro_plugin', '>=0.0.17' # for logging
+  spec.add_development_dependency 'maestro_plugin', '>=0.0.17' # for logging <<- who made this dep on maestro_plugin... you will be destroyed!
 end
