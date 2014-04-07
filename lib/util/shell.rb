@@ -26,7 +26,7 @@ module Maestro
       end
 
       # Utility variables
-      IS_WINDOWS         = RbConfig::CONFIG['host_os'] =~ /mswin/
+      IS_WINDOWS         = ChildProcess.windows?
       SEPARATOR          = IS_WINDOWS ? "\\" : "/"
       MOVE_COMMAND       = IS_WINDOWS ? 'move' : 'mv'
       ENV_EXPORT_COMMAND = IS_WINDOWS ? 'set' : 'export'
@@ -78,10 +78,24 @@ module Maestro
         File.open(@output_file.path, 'a') do |out_file|
           r, w = IO.pipe
           ChildProcess.posix_spawn = true
-          process = IS_WINDOWS ? ChildProcess.build(@command_line) : ChildProcess.build(BASH_EXECUTABLE, @command_line)
+          if IS_WINDOWS
+            if ChildProcess.jruby?
+              # Due to https://github.com/jarib/childprocess/issues/26, we
+              # must use a different implementation of ChildProcess on
+              # Windows + JRuby
+              process = ChildProcess::JRuby::Process.new([@command_line])
+            else
+              process = ChildProcess.build(@command_line)
+            end
+          else
+            process = ChildProcess.build(BASH_EXECUTABLE, @command_line)
+          end
           process.io.stdout = process.io.stderr = w
           process.start
-          w.close
+          # On Windows, can't close the pipe until process has exited or you
+          # get an EOF, see
+          # https://github.com/jarib/childprocess/pull/22#issuecomment-3395687
+          w.close unless IS_WINDOWS
 
           potential_eof = false
           begin
@@ -113,6 +127,7 @@ module Maestro
 
           r.close
           process.wait unless process.exited?
+          w.close if IS_WINDOWS
           @exit_code = ExitCode.new(process.exit_code)
         end
 
