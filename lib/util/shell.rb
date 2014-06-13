@@ -50,6 +50,10 @@ module Maestro
 
         @script_file = Tempfile.new(["script", SCRIPT_EXTENSION])
         @output_file = Tempfile.new(['output','log'])
+
+        # Add @echo off in windows if the script doesn't already use @echo
+        pre = (IS_WINDOWS and !contents.include?("@echo ")) ? "@echo off\n" : ""
+
         # Run any commands in the default system Ruby environment, rather
         # than the one the agent is currently using (which within the wrapper,
         # sets clean values for these to avoid RVM or System gems that might
@@ -57,7 +61,7 @@ module Maestro
         # establish that itself (as the rake task does through rvm if chosen)
         # Add clear env variable commands to head of script, since we don't necessarily have access to env here (depending on
         # version of ruby/bugs)
-        contents = "#{Shell.unset_env_variable('GEM_HOME')}\n#{Shell.unset_env_variable('GEM_PATH')}\n#{contents}"
+        contents = "#{pre}#{Shell.unset_env_variable('GEM_HOME')}\n#{Shell.unset_env_variable('GEM_PATH')}\n#{contents}"
         @script_file.write(contents)
         @script_file.close
         Maestro.log.debug "Writing Script File To #{@script_file.path}"
