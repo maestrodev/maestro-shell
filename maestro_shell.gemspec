@@ -22,6 +22,6 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "mocha", '>=0.10.0'
   spec.add_development_dependency 'rake'
-  spec.add_development_dependency 'rspec', '>= 2.13.0'
+  spec.add_development_dependency 'rspec', '~> 2.13'
   spec.add_development_dependency 'maestro_plugin', '>=0.0.17' # for logging <<- who made this dep on maestro_plugin... you will be destroyed!
 end
